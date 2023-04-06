@@ -22,7 +22,7 @@ const TodoListItem: React.FC<{  idx: number, todoListItem: TodoItem }> = ({ todo
         <h1 className="font-medium text-orange-500">
           {todoListItem.message}
         </h1>
-        <input checked={todoListItem.complete} onChange={onCompleteClick}  type="checkbox" className="h-4 w-4 accent-sky-500 focus:accent-sky-700"/>
+        <input onClick={(e) => e.stopPropagation()} checked={todoListItem.complete} onChange={onCompleteClick}  type="checkbox" className="h-4 w-4 accent-sky-500 focus:accent-sky-700"/>
       </div>
       <h5 className="text-gray-400 text-xs">
         {new Date(todoListItem.timestamp).toLocaleString()}

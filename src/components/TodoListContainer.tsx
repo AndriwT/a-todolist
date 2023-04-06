@@ -13,7 +13,7 @@ const [animationParent] = useAutoAnimate();
   return (
     <div ref={listContainer}>
     <div ref={animationParent} className="h-80 overflow-scroll mt-4">
-      {todoItems.map((todoItem, idx) => (
+      {todoItems.sort((a, b) => b.timestamp - a.timestamp).map((todoItem, idx) => (
         <TodoListItem key={todoItem.timestamp} idx={idx} todoListItem={todoItem} />
       ))}
     </div>

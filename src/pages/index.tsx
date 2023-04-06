@@ -1,15 +1,35 @@
+import PageWrapper from '@/components/PageWrapper';
 import TodoListContainer from '@/components/TodoListContainer';
 import TodoListInput from '@/components/TodoListInput'
 import TodoContextProvider from '@/context/TodoContext';
+import { getUser, UserInfo } from '@/services/UserService';
 import Head from 'next/head'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom';
 
 
 
 export default function Home() {
   const listElement = useRef<HTMLDivElement>(null)
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
 
+  function logOut() {
+    localStorage.removeItem("todo-auth-token");
+    window.location.reload();
+  }
+
+  async function loadUser() {
+    try {
+      const response = await getUser();
+      setUserInfo(response);
+    } catch(e) {
+      console.log("ERROR getting user: ", e);
+    }
+  }
+
+  useEffect(() => {
+    loadUser();
+  }, [])
   return (
     <>
       <Head>
@@ -18,12 +38,19 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className="bg-gradient-to-b from-sky-700 to-sky-900 h-screen flex flex-col items-center justify-center">
+      <PageWrapper>
         <TodoContextProvider listElement={listElement}>
+          <button onClick={logOut} className="hover:shadow-md hover:bg-green-400 absolute bottom-4 right-4 bg-green-200 rounded p-2">
+            Log out
+          </button>
+          {userInfo && (
+      <h5 className="text-white absolute bottom-2 left-2">Logged in as: {userInfo.email}</h5>
+          )}
+    
           <TodoListInput  />
           <TodoListContainer listContainer={listElement}  />
         </TodoContextProvider>
-      </main>
+      </PageWrapper>
     </>
   )
 }

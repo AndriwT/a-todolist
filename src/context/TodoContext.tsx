@@ -1,10 +1,14 @@
+import { getTodoItems, postTodoItem, patchTodoItem, deleteTodoItem } from "@/services/TodoItemService";
 import { createContext, ReactNode, RefObject, useEffect, useState } from "react";
 import { flushSync } from "react-dom";
+
 
 export interface TodoItem {
   timestamp: number;
   message: string;
-  complete?: boolean
+  complete?: boolean;
+  id?: string;
+  userId?: string;
 }
 
 export interface TodoContextI {
@@ -33,8 +37,17 @@ function getCachedItems() {
 const TodoContextProvider: React.FC<{ children: ReactNode, listElement: RefObject<HTMLDivElement> }> = ({ children, listElement }) => {
   const [todoItems, setTodoItems] = useState<TodoItem[]>([]);
 
+  async function loadData() {
+    try {
+    const items = await getTodoItems();
+    setTodoItems(items);
+    } catch(e) {
+      alert("Error getting todo items");
+    }
+  }
+
   useEffect(() => {
-    setTodoItems(getCachedItems());
+    loadData();
   }, [])
 
 
@@ -44,45 +57,39 @@ const TodoContextProvider: React.FC<{ children: ReactNode, listElement: RefObjec
 
 
 
-  function addTodoItem(todoItem: TodoItem) {
-    const todoItemsCopy = todoItems.slice(0);
-    todoItemsCopy.push(todoItem);
-    
+  async function addTodoItem(todoItem: TodoItem) {
+    await postTodoItem(todoItem);
+    const newTodoItems = await getTodoItems();
+
+  
     flushSync(() => {
-      setTodoItems(todoItemsCopy);
+      setTodoItems(newTodoItems);
     })
    
-
     if (listElement.current) {
       listElement.current.children[0].firstElementChild?.scrollIntoView({
         behavior: "smooth",
       });
     }
 
-    saveToLocalStorage(todoItemsCopy);
   }
 
-  function updateTodoItem(idx: number, todoItemProps: Partial<TodoItem>) {
-      const val = todoItems[idx];
-      // val => { timestamp: 1, message: "hello", complete: false }
-      // todoItemProps => { message: "hi "}
-      const updated = { ...val, ...todoItemProps };
-      // updated => { timestamp: 1, message: "hi", complete: false }
-
-
-      const todoItemsCopy = todoItems.slice(0);
-      todoItemsCopy.splice(idx, 1, updated);
-
-      setTodoItems(todoItemsCopy);
-
-      saveToLocalStorage(todoItemsCopy);
+  async function updateTodoItem(idx: number, todoItemProps: Partial<TodoItem>) {
+    const todoItem = todoItems[idx];
+    if (todoItem.id) {
+      await patchTodoItem(todoItem.id, todoItemProps);
+      const todoItemsResponse = await getTodoItems();
+      setTodoItems(todoItemsResponse);
+    }
   }
 
-  function deleteItem(idx: number) {
-    const todoItemsCopy = todoItems.slice(0);
-    todoItemsCopy.splice(idx, 1);
-    setTodoItems(todoItemsCopy);
-    saveToLocalStorage(todoItemsCopy);
+  async function deleteItem(idx: number) {
+    const todoItemCopy = todoItems[idx];
+    if (todoItemCopy.id) {
+    await deleteTodoItem(todoItemCopy.id)
+    const todoItemsResponse = await getTodoItems();
+    setTodoItems(todoItemsResponse);
+    }
   }
 
   return (
